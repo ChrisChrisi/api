@@ -36,7 +36,7 @@ class Router
             // store the second component of the url in case it is param not an action
             $this->scnd_component = $components[1];
             $action = str_replace('-', '_', $components[1]);
-            $this->_action = $this->_method . '_' . $action . '_action';
+            $this->_action = $action . '_action';
         }
 
         // remove the controller and action parts and store the remaining parts as position parameters
@@ -54,15 +54,14 @@ class Router
         //validate controller and action
         if (!class_exists($this->_controller)) {
             $this->_controller = 'Error_controller';
-            $this->_action = $this->_method . '_' .'unknown_action';
+            $this->_action = 'unknown_action';
         } else {
             if (!method_exists($this->_controller, $this->_action)) {
-                $this->_action = $this->_method . '_' .'unknown_action';
+                $this->_action = 'unknown_action';
             }
         }
+        $dispatch = new $this->_controller($this->_params, $this->_method);
 
-        $dispatch = new $this->_controller($this->_params);
-
-        call_user_func_array(array($dispatch, $this->_action), array());
+        call_user_func_array(array($dispatch, $this->_action), array($this->scnd_component));
     }
 }

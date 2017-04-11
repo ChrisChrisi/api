@@ -9,7 +9,7 @@ spl_autoload_register(function ($class) {
         $valid = file_exists($file);
     }
     if ($valid === false) {
-        $file = CN_PATH . $class . '_controller.php';
+        $file = CN_PATH . $class . '.php';
         $valid = file_exists($file);
     }
     if ($valid !== false) {
