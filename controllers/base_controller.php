@@ -4,11 +4,13 @@
 abstract class Base_controller
 {
     protected $_parameters,
-        $_method;
+        $_method,
+        $db;
 
 
     public function __construct($parameters, $method)
     {
+        $this->db = Db::get_instance();
         $this->_parameters = $parameters;
         $this->_method = $method;
     }

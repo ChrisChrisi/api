@@ -40,7 +40,25 @@ class Router
         }
 
         // remove the controller and action parts and store the remaining parts as position parameters
-        $this->_params['url_params'] = array_slice($components, 2);
+        $slice_num = 0;
+        if (isset($this->_controller)) {
+            $slice_num += 1;
+        }
+        if (isset($this->_action)) {
+            $slice_num += 1;
+        }
+        $this->_params['uri'] = array_slice($components, $slice_num);
+
+        if ($this->_method === 'post') {
+            $this->_params['post'] = $_POST;
+        } elseif (in_array($this->_method, array('put', 'delete'))) {
+            //if the request content type multipart/form-data parse the raw data and store it
+            $data = array();
+            if ($_SERVER["CONTENT_TYPE"] === 'application/x-www-form-urlencoded') {
+                parse_str(file_get_contents("php://input"), $data);
+            }
+            $this->_params[$this->_method] = $data;
+        }
     }
 
     /**
