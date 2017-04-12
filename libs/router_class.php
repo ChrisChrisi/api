@@ -52,15 +52,64 @@ class Router
         if ($this->_method === 'post') {
             $this->_params['post'] = $_POST;
         } elseif (in_array($this->_method, array('put', 'delete'))) {
-            //if the request content type multipart/form-data parse the raw data and store it
             $data = array();
-            if ($_SERVER["CONTENT_TYPE"] === 'application/x-www-form-urlencoded') {
+            if (0 === strpos($_SERVER["CONTENT_TYPE"], 'multipart/form-data')) {
+                $data  = $this->parse_multipart_form_data();
+            } elseif ($_SERVER["CONTENT_TYPE"] === 'application/x-www-form-urlencoded') {
+                $data = array();
                 parse_str(file_get_contents("php://input"), $data);
             }
             $this->_params[$this->_method] = $data;
         }
     }
+    private function parse_multipart_form_data()
+    {
+        $input_data = fopen("php://input", "r");
 
+        // read the data 1 KB at a time and write to the variable
+        $raw_data = '';
+        while ($chunk = fread($input_data, 1024)) {
+            $raw_data .= $chunk;
+        }
+        fclose($input_data);
+
+        // fetch content and determine boundary
+        $data = array();
+        $files = array();
+        $boundary = substr($raw_data, 0, strpos($raw_data, "\r\n"));
+        if (empty($boundary)) {
+            parse_str($raw_data, $data);
+            return array('data' => $data, 'files' => $files);
+        }
+
+        // fetch each part
+        $parts = array_slice(explode($boundary, $raw_data), 1);
+        foreach ($parts as $part) {
+            // if this is the last part, break
+            if ($part == "--\r\n") break;
+
+            // separate content from headers
+            $part = ltrim($part, "\r\n");
+            list($raw_headers, $body) = explode("\r\n\r\n", $part, 2);
+
+            // parse the headers list
+            $raw_headers = preg_split("/(\r\n|; )/", $raw_headers);
+            $headers = array();
+            foreach ($raw_headers as $header) {
+                list($name, $value) = preg_split("/(:|=)/", $header);
+                $value = str_replace('"', "", $value);
+                $headers[strtolower($name)] = ltrim($value, ' ');
+            }
+            // parse the Content-Disposition to get the field name, etc.
+            if (isset($headers['content-disposition'])) {
+                //Parse File
+                if (!isset($headers['filename'])) {
+                    $data[$headers['name']] = substr($body, 0, strlen($body) - 2);
+                }
+            }
+        }
+        return $data;
+    }
     /**
      * Executes the rigth method from the right class
      * Or execute error response

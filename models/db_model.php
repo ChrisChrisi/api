@@ -72,7 +72,7 @@ class Db
         return $sth->fetch($conf);
     }
 
-    public function get_all($sql, $vars = false, $params = PDO::FETCH_OBJ)
+    public function get_all($sql, $vars = false, $params = PDO::FETCH_ASSOC)
     {
         $sth = self::sql_query($sql, $vars);
 
